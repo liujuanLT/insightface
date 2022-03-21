@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 import sys
+from datetime import datetime
 import math
 import random
 import logging
@@ -14,11 +15,13 @@ import mxnet as mx
 from mxnet import ndarray as nd
 import argparse
 import mxnet.optimizer as optimizer
+sys.path.append(os.path.dirname(__file__))
 from config import config, default, generate_config
 from metric import *
-sys.path.append(os.path.join(os.path.dirname(__file__),  'common'))
-import flops_counter
-import verification
+# sys.path.append(os.path.join(os.path.dirname(__file__),  'common'))
+# import flops_counter
+# import verification
+from common import flops_counter, verification
 sys.path.append(os.path.join(os.path.dirname(__file__),  'symbol'))
 import fresnet
 import fmobilefacenet
@@ -26,15 +29,24 @@ import fmobilenet
 import fmnasnet
 import fdensenet
 import vargfacenet
+from six import iteritems
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 args = None
 
+def write_arguments_to_file(args, filename, mode='w', title=None):
+    with open(filename, mode) as f:
+        if title:
+            f.write('%s \n' % title)
+        for key, value in iteritems(vars(args)):
+            f.write('%s: %s\n' % (key, str(value)))
 
-def parse_args():
+def parse_args(argv):
     parser = argparse.ArgumentParser(description='Train face network')
+    parser.add_argument('--logs_base_dir', type=str, 
+        help='Directory where to write event logs.', default='~/logs/insightface')
     # general
     parser.add_argument('--dataset',
                         default=default.dataset,
@@ -43,7 +55,8 @@ def parse_args():
                         default=default.network,
                         help='network config')
     parser.add_argument('--loss', default=default.loss, help='loss config')
-    args, rest = parser.parse_known_args()
+    # args, rest = parser.parse_known_args()
+    args = parser.parse_args(argv)
     generate_config(args.network, args.dataset, args.loss)
     parser.add_argument('--models-root',
                         default=default.models_root,
@@ -95,7 +108,7 @@ def parse_args():
                         type=str,
                         default=default.kvstore,
                         help='kvstore setting')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     return args
 
 
@@ -244,13 +257,18 @@ def train_net(args):
         print('use cpu')
     else:
         print('gpu num:', len(ctx))
-    prefix = os.path.join(args.models_root,
-                          '%s-%s-%s' % (args.network, args.loss, args.dataset),
-                          'model')
-    prefix_dir = os.path.dirname(prefix)
+    strtime = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
+    log_dir = os.path.join(os.path.expanduser(args.logs_base_dir), strtime+'_%s-%s-%s' % (args.network, args.loss, args.dataset))
+    if not os.path.isdir(log_dir):  # Create the log directory if it doesn't exist
+        os.makedirs(log_dir)
+    log_result_file_path = os.path.join(log_dir, 'result.txt')
+    model_dir = os.path.join(os.path.expanduser(args.models_root), strtime +'_%s-%s-%s' % (args.network, args.loss, args.dataset))
+    prefix = os.path.join(model_dir, 'model')
     print('prefix', prefix)
-    if not os.path.exists(prefix_dir):
-        os.makedirs(prefix_dir)
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    write_arguments_to_file(args, os.path.join(log_dir, 'arguments.txt'), title='args:')
+    write_arguments_to_file(config, os.path.join(log_dir, 'arguments.txt'), mode='a', title='=========config=========:')
     args.ctx_num = len(ctx)
     args.batch_size = args.per_batch_size * args.ctx_num
     args.rescale_threshold = 0
@@ -374,12 +392,16 @@ def train_net(args):
     def ver_test(nbatch):
         results = []
         for i in range(len(ver_list)):
-            acc1, std1, acc2, std2, xnorm, embeddings_list = verification.test(
+            acc1, std1, acc2, std2, xnorm, embeddings_list, val, val_std, far  = verification.test(
                 ver_list[i], model, args.batch_size, 10, None, None)
             print('[%s][%d]XNorm: %f' % (ver_name_list[i], nbatch, xnorm))
             #print('[%s][%d]Accuracy: %1.5f+-%1.5f' % (ver_name_list[i], nbatch, acc1, std1))
             print('[%s][%d]Accuracy-Flip: %1.5f+-%1.5f' %
                   (ver_name_list[i], nbatch, acc2, std2))
+            print('[%s][%d]Val rate-Flip: %1.5f+-%1.5f @ %1.5f' %
+                  (ver_name_list[i], nbatch, val, val_std, far))
+            with open(log_result_file_path,'at') as f:
+                f.write('%s %d\t%.5f\t%.5f\n' % (ver_name_list[i], nbatch, acc2, val))      
             results.append(acc2)
         return results
 
@@ -474,11 +496,10 @@ def train_net(args):
         epoch_end_callback=epoch_cb)
 
 
-def main():
-    global args
-    args = parse_args()
+def main(args):
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     train_net(args)
 
 
 if __name__ == '__main__':
-    main()
+    main(parse_args(os.argv[1:]))

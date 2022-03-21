@@ -325,11 +325,9 @@ def test(data_set,
                                                  issame_list,
                                                  nrof_folds=nfolds)
     acc2, std2 = np.mean(accuracy), np.std(accuracy)
-    return acc1, std1, acc2, std2, _xnorm, embeddings_list
+    return acc1, std1, acc2, std2, _xnorm, embeddings_list, val, val_std, far 
 
-
-if __name__ == '__main__':
-
+def parse_args(argv):
     parser = argparse.ArgumentParser(description='do verification')
     # general
     parser.add_argument('--data-dir', default='', help='')
@@ -344,7 +342,10 @@ if __name__ == '__main__':
     parser.add_argument('--max', default='', type=str, help='')
     parser.add_argument('--mode', default=0, type=int, help='')
     parser.add_argument('--nfolds', default=10, type=int, help='')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    return args
+
+def main(args):
     #sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
     #import face_image
     #prop = face_image.load_property(args.data_dir)
@@ -406,13 +407,15 @@ if __name__ == '__main__':
         for i in range(len(ver_list)):
             results = []
             for model in nets:
-                acc1, std1, acc2, std2, xnorm, embeddings_list = test(
+                acc1, std1, acc2, std2, xnorm, embeddings_list, val, val_std, far = test(
                     ver_list[i], model, args.batch_size, args.nfolds)
                 print('[%s]XNorm: %f' % (ver_name_list[i], xnorm))
                 print('[%s]Accuracy: %1.5f+-%1.5f' %
                       (ver_name_list[i], acc1, std1))
                 print('[%s]Accuracy-Flip: %1.5f+-%1.5f' %
                       (ver_name_list[i], acc2, std2))
+                print('[%s]val rate: %1.5f+-%1.5f @ %1.5f' %
+                      (ver_name_list[i], val, val_std, far))
                 results.append(acc2)
             print('Max of [%s] is %1.5f' % (ver_name_list[i], np.max(results)))
     elif args.mode == 1:
@@ -421,3 +424,6 @@ if __name__ == '__main__':
     else:
         model = nets[0]
         dumpR(ver_list[0], model, args.batch_size, args.target)
+
+if __name__ =='__main__':
+    main(parse_args(os.argv[1:]))
