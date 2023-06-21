@@ -69,11 +69,14 @@ def get_fc1(last_conv, num_classes, fc_type, input_channel=512):
         fc1 = mx.sym.FullyConnected(data=body,
                                     num_hidden=num_classes,
                                     name='pre_fc1')
+        # fc1 = Conv(data=body, num_filter=num_classes, kernel=(7, 7), stride=(1, 1), pad=(0, 0), no_bias=True, name="pre_fc1",
+        #     workspace=256)
         fc1 = mx.sym.BatchNorm(data=fc1,
                                fix_gamma=True,
                                eps=2e-5,
                                momentum=bn_mom,
                                name='fc1')
+        # fc1 = mx.sym.squeeze(data=fc1, axis=(2,3))
     elif fc_type == 'FC':
         body = mx.sym.BatchNorm(data=body,
                                 fix_gamma=False,

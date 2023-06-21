@@ -28,7 +28,10 @@ import fmobilefacenet
 import fmobilenet
 import fmnasnet
 import fdensenet
+import fdensenet_symbol
+import fdensenet_symbol2
 import vargfacenet
+import squeezenet
 from six import iteritems
 
 logger = logging.getLogger()
@@ -262,6 +265,7 @@ def train_net(args):
     if not os.path.isdir(log_dir):  # Create the log directory if it doesn't exist
         os.makedirs(log_dir)
     log_result_file_path = os.path.join(log_dir, 'result.txt')
+    best_info_file_path = os.path.join(log_dir, 'best_info.txt')
     model_dir = os.path.join(os.path.expanduser(args.models_root), strtime +'_%s-%s-%s' % (args.network, args.loss, args.dataset))
     prefix = os.path.join(model_dir, 'model')
     print('prefix', prefix)
@@ -304,14 +308,14 @@ def train_net(args):
             args.pretrained, args.pretrained_epoch)
         sym = get_symbol(args)
 
-    if config.count_flops:
-        all_layers = sym.get_internals()
-        _sym = all_layers['fc1_output']
-        FLOPs = flops_counter.count_flops(_sym,
-                                          data=(1, 3, image_size[0],
-                                                image_size[1]))
-        _str = flops_counter.flops_str(FLOPs)
-        print('Network FLOPs: %s' % _str)
+    # if config.count_flops:
+    #     all_layers = sym.get_internals()
+    #     _sym = all_layers['fc1_output']
+    #     FLOPs = flops_counter.count_flops(_sym,
+    #                                       data=(1, 3, image_size[0],
+    #                                             image_size[1]))
+    #     _str = flops_counter.flops_str(FLOPs)
+    #     print('Network FLOPs: %s' % _str)
 
     #label_name = 'softmax_label'
     #label_shape = (args.batch_size,)
@@ -363,7 +367,7 @@ def train_net(args):
             metric2 = LossValueMetric()
             eval_metrics.append(mx.metric.create(metric2))
 
-    if config.net_name == 'fresnet' or config.net_name == 'fmobilefacenet':
+    if config.net_name == 'fresnet' or config.net_name == 'fmobilefacenet' or config.net_name == 'debugnan' or config.net_name == 'squeezenet':
         initializer = mx.init.Xavier(rnd_type='gaussian',
                                      factor_type="out",
                                      magnitude=2)  #resnet style
@@ -452,6 +456,7 @@ def train_net(args):
                     #  do_save = True
             if is_highest:
                 do_save = True
+                print(f'currently best at step {mbatch}')  
             if args.ckpt == 0:
                 do_save = False
             elif args.ckpt == 2:
@@ -461,6 +466,8 @@ def train_net(args):
 
             if do_save:
                 print('saving', msave)
+                with open(best_info_file_path,'wt') as f:
+                    f.write('save at step %d: %s\n' % (mbatch, prefix)) 
                 arg, aux = model.get_params()
                 if config.ckpt_embedding:
                     all_layers = model.symbol.get_internals()
@@ -494,11 +501,12 @@ def train_net(args):
         allow_missing=True,
         batch_end_callback=_batch_callback,
         epoch_end_callback=epoch_cb)
+    return model_dir
 
 
 def main(args):
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    train_net(args)
+    return train_net(args)
 
 
 if __name__ == '__main__':

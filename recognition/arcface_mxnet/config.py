@@ -2,6 +2,11 @@ import numpy as np
 import os
 from easydict import EasyDict as edict
 
+main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
+# train_datasets_base_dir = os.path.join(main_dir, 'dataset/resnet18/train')
+train_datasets_base_dir = os.path.expanduser("~/data/facerecog/datasets/")
+
+
 config = edict()
 
 config.bn_mom = 0.9
@@ -9,7 +14,7 @@ config.workspace = 256
 config.emb_size = 512
 config.ckpt_embedding = True
 config.net_se = 0
-config.net_act = 'prelu'
+config.net_act = 'relu'
 config.net_unit = 3
 config.net_input = 1
 config.net_blocks = [1, 4, 6, 2]
@@ -34,9 +39,20 @@ config.fp16 = False
 # network settings
 network = edict()
 
+
+network.debugnan = edict()
+network.debugnan.net_name = 'debugnan'
+network.debugnan.num_layers = 18
+network.debugnan.emb_size = 128
+
+network.sq = edict()
+network.sq.net_name = 'squeezenet'
+network.sq.emb_size = 128
+
 network.r18 = edict()
 network.r18.net_name = 'fresnet'
 network.r18.num_layers = 18
+network.r18.emb_size = 128
 
 network.r100 = edict()
 network.r100.net_name = 'fresnet'
@@ -55,6 +71,27 @@ network.r50v1 = edict()
 network.r50v1.net_name = 'fresnet'
 network.r50v1.num_layers = 50
 network.r50v1.net_unit = 1
+
+network.d121 = edict()
+network.d121.net_name = 'fdensenet'
+network.d121.num_layers = 121
+# network.d121.per_batch_size = 64
+network.d121.emb_size = 128
+network.d121.densenet_dropout = 0.0
+
+network.d121_sym = edict()
+network.d121_sym.net_name = 'fdensenet_symbol'
+network.d121_sym.num_layers = 121
+# network.d121_sym.per_batch_size = 64
+network.d121_sym.emb_size = 128
+network.d121_sym.densenet_dropout = 0.0
+
+network.d121_sym2 = edict()
+network.d121_sym2.net_name = 'fdensenet_symbol2'
+network.d121_sym2.num_layers = 121
+# network.d121_sym.per_batch_size = 64
+network.d121_sym2.emb_size = 128
+network.d121_sym2.densenet_dropout = 0.0
 
 network.d169 = edict()
 network.d169.net_name = 'fdensenet'
@@ -93,7 +130,7 @@ network.m05.net_multiplier = 0.5
 
 network.mnas = edict()
 network.mnas.net_name = 'fmnasnet'
-network.mnas.emb_size = 256
+network.mnas.emb_size = 128
 network.mnas.net_output = 'GDC'
 network.mnas.net_multiplier = 1.0
 
@@ -120,7 +157,7 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '/home/jliu/codes/data/datasets/ms1m/faces_ms1m_112x112' # '../datasets/faces_emore' 
+dataset.emore.dataset_path = os.path.join(train_datasets_base_dir, 'ms1m/faces_ms1m_112x112') # '../datasets/faces_emore' 
 dataset.emore.num_classes = 85742
 dataset.emore.image_shape = (112, 112, 3)
 dataset.emore.val_targets = ['lfw'] # ['lfw', 'cfp_fp', 'agedb_30']
@@ -203,7 +240,7 @@ default.mom = 0.9
 default.per_batch_size = 128
 default.ckpt = 3
 default.lr_steps = '100000,160000,220000, 280000, 340000, 400000'
-default.models_root = '/home/jliu/codes/data/facenet_trained_model/insightface' #'./models'
+default.models_root = 'data/facenet_trained_model'
 
 
 def generate_config(_network, _dataset, _loss):
