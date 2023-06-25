@@ -505,7 +505,7 @@ def train_net(args):
 
 
 def main(args):
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     return train_net(args)
 
 

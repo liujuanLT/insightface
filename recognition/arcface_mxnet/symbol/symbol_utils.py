@@ -77,6 +77,123 @@ def get_fc1(last_conv, num_classes, fc_type, input_channel=512):
                                momentum=bn_mom,
                                name='fc1')
         # fc1 = mx.sym.squeeze(data=fc1, axis=(2,3))
+    # elif fc_type == 'noreshape1':
+    #     body = mx.sym.BatchNorm(data=body,
+    #                             fix_gamma=False,
+    #                             eps=2e-5,
+    #                             momentum=bn_mom,
+    #                             name='bn1')
+    #     body = mx.symbol.Dropout(data=body, p=0.4) # 
+    #     fc1 = mx.sym.Pooling(data=body, global_pool=True, kernel=(7, 7), pool_type='avg', name='pool1')
+    #     fc1 = mx.sym.Flatten(data=fc1)
+    #     fc1 = mx.sym.FullyConnected(data=fc1,
+    #                                 num_hidden=num_classes,
+    #                                 name='pre_fc1')
+    #     # fc1 = Conv(data=body, num_filter=num_classes, kernel=(7, 7), stride=(1, 1), pad=(0, 0), no_bias=True, name="pre_fc1",
+    #     #     workspace=256)
+    #     fc1 = mx.sym.BatchNorm(data=fc1,
+    #                            fix_gamma=True,
+    #                            eps=2e-5,
+    #                            momentum=bn_mom,
+    #                            name='fc1')
+    #     # fc1 = mx.sym.squeeze(data=fc1, axis=(2,3))
+    # elif fc_type == 'noreshape2':
+    #     body = mx.sym.BatchNorm(data=body,
+    #                             fix_gamma=False,
+    #                             eps=2e-5,
+    #                             momentum=bn_mom,
+    #                             name='bn1')
+    #     body = mx.symbol.Dropout(data=body, p=0.4) # 
+    #     fc1 = mx.sym.Pooling(data=body, global_pool=True, kernel=(7, 7), pool_type='avg', name='pool1')
+    #     fc1 = mx.sym.Convolution(data=fc1,
+    #                                   num_filter=num_classes,
+    #                                   kernel=(1, 1),
+    #                                   stride=(1, 1),
+    #                                   pad=(0, 0),
+    #                                   no_bias=True,
+    #                                   name='pre_fc1')
+    #     # fc1 = mx.sym.FullyConnected(data=fc1,
+    #     #                             num_hidden=num_classes,
+    #     #                             name='pre_fc1')
+    #     # fc1 = Conv(data=body, num_filter=num_classes, kernel=(7, 7), stride=(1, 1), pad=(0, 0), no_bias=True, name="pre_fc1",
+    #     #     workspace=256)
+    #     fc1 = mx.sym.BatchNorm(data=fc1,
+    #                            fix_gamma=True,
+    #                            eps=2e-5,
+    #                            momentum=bn_mom,
+    #                            name='fc1')
+    # elif fc_type == 'noreshape3':
+    #     bn1 = mx.sym.BatchNorm(data=body,
+    #                            fix_gamma=False,
+    #                            eps=2e-5,
+    #                            momentum=bn_mom,
+    #                            name='bn1')
+    #     relu1 = Act(data=bn1, act_type=config.net_act, name='relu1')
+    #     # Although kernel is not used here when global_pool=True, we should put one
+    #     pool1 = mx.sym.Pooling(data=relu1,
+    #                            global_pool=True,
+    #                            kernel=(7, 7),
+    #                            pool_type='avg',
+    #                            name='pool1')
+    #     # flat = mx.sym.Flatten(data=pool1)
+    #     # fc1 = mx.sym.FullyConnected(data=flat,
+    #     #                             num_hidden=num_classes,
+    #     #                             name='pre_fc1')
+    #     fc1 = mx.sym.Convolution(data=pool1,
+    #                                   num_filter=num_classes,
+    #                                   kernel=(1, 1),
+    #                                   stride=(1, 1),
+    #                                   pad=(0, 0),
+    #                                   no_bias=True,
+    #                                   name='pre_fc1')
+    #     fc1 = mx.sym.squeeze(data=fc1, axis=(2,3))
+    #     fc1 = mx.sym.BatchNorm(data=fc1,
+    #                            fix_gamma=True,
+    #                            eps=2e-5,
+    #                            momentum=bn_mom,
+    #                            name='fc1')
+    elif fc_type == 'conv1':
+        body = mx.sym.BatchNorm(data=body,
+                                fix_gamma=False,
+                                eps=2e-5,
+                                momentum=bn_mom,
+                                name='bn1')
+        # body = mx.symbol.Dropout(data=body, p=0.4) # 
+        fc1 = mx.sym.Convolution(data=body,
+                                      num_filter=num_classes,
+                                      kernel=(7, 7),
+                                      stride=(1, 1),
+                                      pad=(0, 0),
+                                      no_bias=True,
+                                      name='pre_fc1')
+        fc1 = mx.sym.BatchNorm(data=fc1,
+                               fix_gamma=True,
+                               eps=2e-5,
+                               momentum=bn_mom,
+                               name='pre_fc2')
+        fc1 = mx.sym.squeeze(data=fc1, axis=(2,3), name='fc1')
+    elif fc_type == 'conv2':
+        body = mx.sym.BatchNorm(data=body,
+                                fix_gamma=False,
+                                eps=2e-5,
+                                momentum=bn_mom,
+                                name='bn1')
+        # body = mx.symbol.Dropout(data=body, p=0.4) # 
+        fc1 = mx.sym.Convolution(data=body,
+                                      num_filter=num_classes,
+                                      kernel=(7, 7),
+                                      stride=(1, 1),
+                                      pad=(0, 0),
+                                      no_bias=True,
+                                      name='pre_fc1')
+        fc1 = mx.sym.BatchNorm(data=fc1,
+                               fix_gamma=True,
+                               eps=2e-5,
+                               momentum=bn_mom,
+                               name='pre_fc2')
+        # fc1 = mx.sym.squeeze(data=fc1, axis=(2,3), name='fc1')    
+        fc1 = mx.sym.Flatten(data=fc1, name='fc1')
+
     elif fc_type == 'FC':
         body = mx.sym.BatchNorm(data=body,
                                 fix_gamma=False,
