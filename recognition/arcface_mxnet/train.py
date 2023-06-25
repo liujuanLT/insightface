@@ -29,7 +29,7 @@ import fmobilenet
 import fmnasnet
 import fdensenet
 import fdensenet_symbol
-import fdensenet_symbol2
+# import fdensenet_symbol2
 import vargfacenet
 import squeezenet
 from six import iteritems
